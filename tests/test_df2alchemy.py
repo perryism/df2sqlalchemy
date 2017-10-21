@@ -7,6 +7,7 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 
 import os
+import sqlite3
 
 class TestDf2SqlAlchemy(unittest.TestCase):
     def setUp(self):
@@ -29,17 +30,26 @@ class TestDf2SqlAlchemy(unittest.TestCase):
 
         self.assertEqual(model.name, "books")
         self.assertEqual(model.primary_key.columns.keys(), ['name'])
-        db_file = 'test.sqlite'
-        try:
-            engine = create_engine('sqlite:///%s'%db_file)
-            model.metadata.create_all(engine)
-        finally:
-            os.remove(db_file)
 
     def test_map(self):
         type_map = { 'name': sqlalchemy.Text}
         model = load_model_from_dataframe('books', self.df, primary_keys=['name'], type_map=type_map)
         self.assertIsInstance(model.columns['name'].type, sqlalchemy.Text)
 
+    def test_integration(self):
+        model = load_model_from_dataframe('books', self.df, primary_keys=['name'])
+        db_file = 'test.sqlite'
+        try:
+            db_path = 'sqlite:///%s'%db_file
+            engine = create_engine(db_path)
+            model.metadata.create_all(engine)
+
+            with sqlite3.connect(db_file) as conn:
+                conn.cursor().execute("SELECT name, count, price FROM books")
+
+        except Exception as e:
+            self.fail("%s raised"%e)
+        finally:
+            os.remove(db_file)
 
 
