@@ -6,11 +6,6 @@ def load_model_from_dataframe(name, df, primary_keys=None, type_map = {}):
 
     columns = []
     for column, dtype in zip(df.columns, df.dtypes):
-        primary_key = False
-
-        if column in primary_keys:
-            primary_key = True
-
         column_type = type_map.get(column)
 
         if column_type is None:
@@ -23,7 +18,7 @@ def load_model_from_dataframe(name, df, primary_keys=None, type_map = {}):
             else:
                 raise "Unsupported dtype %s"%dtype
 
-        columns.append(Column(column, column_type, primary_key=primary_key))  # Text??
+        columns.append(Column(column, column_type, primary_key=(column in primary_keys)))
     args = [name, metadata] + columns
 
     return Table(*args)
